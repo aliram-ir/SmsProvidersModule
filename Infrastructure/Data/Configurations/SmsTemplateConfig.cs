@@ -12,6 +12,10 @@ namespace Infrastructure.Data.Configurations
 
             builder.HasKey(t => t.Id);
 
+            builder.Property(t => t.TemplateCode)
+                   .IsRequired()
+                   .HasMaxLength(100);
+
             builder.Property(t => t.TemplateBody)
                    .IsRequired()
                    .HasMaxLength(500);

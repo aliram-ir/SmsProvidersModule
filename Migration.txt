@@ -2,3 +2,5 @@
 
 dotnet ef migrations add InitSmsConfig --context AppDbContext
 dotnet ef database update --context AppDbContext
+
+dotnet ef database drop
