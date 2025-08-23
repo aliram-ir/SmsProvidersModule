@@ -1,0 +1,26 @@
+﻿Core
+ ├── Entities
+ │     ├── SmsConfig.cs
+ │     ├── SmsProviderEntry.cs
+ │     ├── SmsLineEntry.cs
+ │     └── SmsTemplate.cs
+ ├── Interfaces
+ │     ├── ISmsService
+ │     ├── ISmsProviderSelector
+ │     └── IGenericRepository<T>
+ └── Enums
+       ├── SmsProviderType.cs
+       └── SmsTemplateType.cs
+
+Infrastructure
+ ├── Data
+ │     └── AppDbContext.cs
+ ├── Services
+ │     ├── SmsService.cs  <-- متدهای عملیاتی (مثل SendSmsAsync)
+ │     └── SmsProviderSelector.cs <-- انتخاب provider پیشفرض + فعال
+ ├── Repositories
+ │     └── GenericRepository.cs
+ ├── Persistence
+ │     └── UnitOfWork.cs
+ └── DependencyInjection
+       └── ServiceCollectionExtensions.cs

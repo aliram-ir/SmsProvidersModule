@@ -1,0 +1,4 @@
+﻿﻿داخل ترمینال در مسیر پروژه Infrastructure (یا جایی که DbContext تعریف شده)
+
+dotnet ef migrations add InitSmsConfig --context AppDbContext
+dotnet ef database update --context AppDbContext
