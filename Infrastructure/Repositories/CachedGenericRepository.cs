@@ -1,4 +1,5 @@
 ﻿using Core.Interfaces;
+using Infrastructure.Cache;
 using Microsoft.Extensions.Caching.Memory;
 using System.Linq.Expressions;
 
@@ -8,35 +9,41 @@ namespace Infrastructure.Repositories
     {
         private readonly IGenericRepository<T> _inner;
         private readonly IMemoryCache _cache;
+        private readonly ICacheKeyTracker _tracker;
+        private readonly string _typePrefix;
 
-        public CachedGenericRepository(IGenericRepository<T> inner, IMemoryCache cache)
+        public CachedGenericRepository(IGenericRepository<T> inner, IMemoryCache cache, ICacheKeyTracker tracker)
         {
             _inner = inner;
             _cache = cache;
+            _tracker = tracker;
+            _typePrefix = typeof(T).Name;
         }
 
         public async Task<T?> GetByIdAsync(int id)
         {
-            var cacheKey = $"{typeof(T).Name}_Id_{id}";
-            if (_cache.TryGetValue(cacheKey, out T? cachedEntity))
-                return cachedEntity;
+            var cacheKey = $"{_typePrefix}_Id_{id}";
+            if (_cache.TryGetValue(cacheKey, out T? cached))
+                return cached;
 
             var entity = await _inner.GetByIdAsync(id);
             if (entity != null)
+            {
                 _cache.Set(cacheKey, entity, TimeSpan.FromMinutes(5));
-
+                _tracker.Track(cacheKey);
+            }
             return entity;
         }
 
         public async Task<IReadOnlyList<T>> GetAllAsync()
         {
-            var cacheKey = $"{typeof(T).Name}_All";
+            var cacheKey = $"{_typePrefix}_All";
             if (_cache.TryGetValue(cacheKey, out IReadOnlyList<T>? cachedList) && cachedList is not null)
                 return cachedList;
 
             var list = await _inner.GetAllAsync();
             _cache.Set(cacheKey, list, TimeSpan.FromMinutes(5));
-            TrackKey(cacheKey);
+            _tracker.Track(cacheKey);
             return list;
         }
 
@@ -64,20 +71,11 @@ namespace Infrastructure.Repositories
             _inner.Delete(entity);
         }
 
-        private readonly HashSet<string> _cacheKeys = new HashSet<string>();
-
-        private void TrackKey(string key)
-        {
-            _cacheKeys.Add(key);
-        }
-
         private void ClearCache()
         {
-            foreach (var key in _cacheKeys.Where(k => k.StartsWith(typeof(T).Name)))
-            {
-                _cache.Remove(key);
-            }
-            _cacheKeys.RemoveWhere(k => k.StartsWith(typeof(T).Name));
+            var keys = _tracker.KeysStartingWith(_typePrefix).ToList();
+            foreach (var k in keys) _cache.Remove(k);
+            _tracker.RemoveStartingWith(_typePrefix);
         }
     }
 }

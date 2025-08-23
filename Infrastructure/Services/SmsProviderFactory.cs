@@ -2,18 +2,23 @@
 using Core.Enums;
 using Core.Interfaces;
 using Infrastructure.Providers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Services
 {
     public class SmsProviderFactory : ISmsProviderFactory
+
     {
+
+        private readonly IServiceProvider _provider;
+        public SmsProviderFactory(IServiceProvider provider) => _provider = provider;
+
         public ISmsProvider Create(SmsProviderEntry entry)
         {
-            return entry.ProviderType switch
-            {
-                SmsProviderType.MeliPayamak => new MeliPayamakProvider(entry),
-                _ => throw new NotSupportedException($"Provider type '{entry.ProviderType}' is not supported."),
-            };
+            // Example: switch on entry.ProviderType or use reflection
+            if (entry.ProviderType == SmsProviderType.MeliPayamak)
+                return ActivatorUtilities.CreateInstance<MeliPayamakProvider>(_provider, entry);
+            throw new NotSupportedException(entry.ProviderType.ToString());
         }
     }
 }

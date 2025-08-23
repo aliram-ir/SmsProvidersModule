@@ -2,6 +2,7 @@
 using Infrastructure.Data;
 using Infrastructure.Repositories;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections;
 
 namespace Infrastructure.Persistence
@@ -9,28 +10,26 @@ namespace Infrastructure.Persistence
     public class UnitOfWork : IUnitOfWork
     {
         private readonly AppDbContext _context;
-        private readonly IMemoryCache _cache;
-        private Hashtable? _repositories;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly Hashtable _repositories = new();
 
-        public UnitOfWork(AppDbContext context, IMemoryCache cache)
+        public UnitOfWork(AppDbContext context, IServiceProvider serviceProvider)
         {
             _context = context;
-            _cache = cache;
+            _serviceProvider = serviceProvider;
         }
 
         public IGenericRepository<TEntity> Repository<TEntity>() where TEntity : class
         {
-            _repositories ??= new Hashtable();
-
             var type = typeof(TEntity).Name;
-
             if (!_repositories.ContainsKey(type))
             {
-                var innerRepo = new GenericRepository<TEntity>(_context);
-                var cachedRepo = new CachedGenericRepository<TEntity>(innerRepo, _cache);
-                _repositories.Add(type, cachedRepo);
+                // Resolve inner GenericRepository<TEntity>
+                var inner = (IGenericRepository<TEntity>)_serviceProvider.GetRequiredService(typeof(GenericRepository<TEntity>));
+                // Resolve CachedGenericRepository<TEntity> via activator
+                var cached = ActivatorUtilities.CreateInstance<CachedGenericRepository<TEntity>>(_serviceProvider, inner);
+                _repositories[type] = cached;
             }
-
             return (IGenericRepository<TEntity>)_repositories[type]!;
         }
 

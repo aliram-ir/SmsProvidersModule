@@ -1,6 +1,9 @@
 ﻿using Core.Interfaces;
+using Infrastructure.Cache;
 using Infrastructure.Data;
 using Infrastructure.Persistence;
+using Infrastructure.Providers;
+using Infrastructure.Repositories;
 using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,11 +21,20 @@ namespace Infrastructure.DependencyInjection
                 options.UseSqlServer(configuration.GetConnectionString("MyApiDb")));
 
             services.AddMemoryCache();
+            services.AddSingleton<ICacheKeyTracker, CacheKeyTracker>();
 
-            // توجه: الان IGenericRepository از طریق UnitOfWork ساخته میشه
+            // فقط GenericRepository<> را ثبت می‌کنیم تا UnitOfWork بتواند resolve کند
+            services.AddScoped(typeof(GenericRepository<>));
+
+            // UnitOfWork وظیفه‌ی ساخت CachedGenericRepository<TEntity> را دارد
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-            // سرویس‌های SMS
+            // HttpClient for MeliPayamak
+            services.AddHttpClient("MeliPayamak");
+
+            // Providers and SMS services
+            services.AddScoped<ISmsProvider, MeliPayamakProvider>();
+            services.AddScoped<ISmsProviderFactory, SmsProviderFactory>();
             services.AddScoped<ISmsProviderSelector, SmsProviderSelector>();
             services.AddScoped<ISmsService, SmsService>();
 

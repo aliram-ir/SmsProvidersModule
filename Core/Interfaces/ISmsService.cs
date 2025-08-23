@@ -6,18 +6,67 @@
     public interface ISmsService
     {
         // ساده
+        /// <summary>
+        /// ارسال ساده
+        /// </summary>
+        /// <param name="fromLine"></param>
+        /// <param name="phoneNumber"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
         Task SendMessageAsync(string fromLine, string phoneNumber, string message);
+
+        /// <summary>
+        /// ارسال ساده کلی
+        /// </summary>
+        /// <param name="fromLine"></param>
+        /// <param name="phoneNumbers"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
         Task SendBulkMessageAsync(string fromLine, IEnumerable<string> phoneNumbers, string message);
 
         // الگو
+        /// <summary>
+        /// ارسال با الگو
+        /// </summary>
+        /// <param name="templateCode"></param>
+        /// <param name="phoneNumber"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
         Task SendTemplateAsync(string templateCode, string phoneNumber, Dictionary<string, string> parameters);
+       
+        /// <summary>
+        /// ارسال کلی با الگو
+        /// </summary>
+        /// <param name="templateCode"></param>
+        /// <param name="phoneNumbers"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
         Task SendBulkTemplateAsync(string templateCode, IEnumerable<string> phoneNumbers, Dictionary<string, string> parameters);
 
         // OTP
+        /// <summary>
+        /// ارسال کد تایید
+        /// </summary>
+        /// <param name="phoneNumber"></param>
+        /// <param name="otpCode"></param>
+        /// <returns></returns>
         Task SendOtpAsync(string phoneNumber, string otpCode);
+
+        /// <summary>
+        /// ارسال کد تایید
+        /// </summary>
+        /// <param name="phoneNumber"></param>
+        /// <returns></returns>
         Task SendOtpAsync(string phoneNumber); // تولید توسط خود Provider
 
         // OTP الگو
+        /// <summary>
+        /// ارسال کد تایید
+        /// </summary>
+        /// <param name="templateCode"></param>
+        /// <param name="phoneNumber"></param>
+        /// <param name="otpCode"></param>
+        /// <returns></returns>
         Task SendOtpTemplateAsync(string templateCode, string phoneNumber, string otpCode);
     }
 }
