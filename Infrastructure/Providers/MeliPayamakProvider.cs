@@ -1,6 +1,9 @@
-﻿using Core.Entities;
+﻿using Core.Dtos;
+using Core.DTOs;
+using Core.Entities;
 using Core.Interfaces;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Infrastructure.Providers
 {
@@ -37,16 +40,34 @@ namespace Infrastructure.Providers
         }
 
         // ارسال پیامک ساده به یک گیرنده
-        public async Task SendMessageAsync(string fromLine, string phoneNumber, string message)
+        public async Task<SmsSendResult> SendMessageAsync(string fromLine, string phoneNumber, string message)
         {
-            var payload = new
+            try
             {
-                from = GetFromLineOrDefault(fromLine),
-                to = phoneNumber,
-                text = message
-            };
-            var response = await PostAsync($"api/send/simple/{GetApiKey()}", payload);
-            Console.WriteLine($"[MeliPayamak Simple] Response: {response}");
+                var payload = new
+                {
+                    from = GetFromLineOrDefault(fromLine),
+                    to = phoneNumber,
+                    text = message
+                };
+
+                var response = await PostAsync($"api/send/simple/{GetApiKey()}", payload);
+
+                Console.WriteLine($"[MeliPayamak Simple] Response: {response}");
+
+                // اینجا response رو می‌تونی parse هم بکنی اگه فرمتش مشخصه
+                return SmsSendResult.SuccessResult(
+                    recId: null,                  // اگه provider کد رهگیری می‌ده اینجا بگذار
+                    providerStatus: "Sent",
+                    rawResponse: response
+                );
+            }
+            catch (Exception ex)
+            {
+                return SmsSendResult.FailureResult(
+                    errorMessage: ex.Message
+                );
+            }
         }
 
         // ارسال پیامک ساده به چند گیرنده
@@ -116,19 +137,36 @@ namespace Infrastructure.Providers
         }
 
         // ارسال OTP با استفاده از الگو
-        public async Task SendOtpTemplateAsync(string templateCode, string phoneNumber, string otpCode)
+        public async Task<SmsSendResult> SendOtpTemplateAsync(string templateCode, string phoneNumber, string otpCode)
         {
-            if (!int.TryParse(templateCode, out var bodyId))
-                throw new ArgumentException("TemplateCode must be numeric BodyId for MeliPayamak.", nameof(templateCode));
-
-            var payload = new
+            try
             {
-                bodyId = bodyId,
-                to = phoneNumber,
-                args = new[] { otpCode }
-            };
-            var response = await PostAsync($"api/send/shared/{GetApiKey()}", payload);
-            Console.WriteLine($"[MeliPayamak OTP Template] Response: {response}");
+                if (!int.TryParse(templateCode, out var bodyId))
+                    return SmsSendResult.FailureResult("TemplateCode must be numeric");
+
+                var payload = new
+                {
+                    bodyId = bodyId,
+                    to = phoneNumber,
+                    args = new[] { otpCode }
+                };
+
+                var rawResponse = await PostAsync($"api/send/shared/{GetApiKey()}", payload);
+
+                // فرض: ملی پیامک خروجی JSON داره
+                var parsed = JsonSerializer.Deserialize<MeliPayamakResponse>(rawResponse);
+
+                if (parsed != null && parsed.RecId > 0 && string.IsNullOrWhiteSpace(parsed.Status))
+                {
+                    return SmsSendResult.SuccessResult(parsed.RecId.ToString(), parsed.Status, rawResponse);
+                }
+
+                return SmsSendResult.FailureResult("Send failed", parsed?.Status, rawResponse);
+            }
+            catch (Exception ex)
+            {
+                return SmsSendResult.FailureResult(ex.Message);
+            }
         }
     }
 }

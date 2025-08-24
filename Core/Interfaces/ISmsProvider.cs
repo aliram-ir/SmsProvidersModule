@@ -1,4 +1,6 @@
-﻿namespace Core.Interfaces
+﻿using Core.Dtos;
+
+namespace Core.Interfaces
 {
     /// <summary>
     /// رابط پایه برای همه‌ی سرویس‌های ارسال پیامک
@@ -8,7 +10,7 @@
         /// <summary>
         /// ارسال پیامک ساده به یک گیرنده با خط اختصاصی
         /// </summary>
-        Task SendMessageAsync(string fromLine, string phoneNumber, string message);
+        Task<SmsSendResult> SendMessageAsync(string fromLine, string phoneNumber, string message);
 
         /// <summary>
         /// ارسال پیامک ساده به چند گیرنده با خط اختصاصی
@@ -34,6 +36,6 @@
         /// <summary>
         /// ارسال رمز یکبار مصرف (OTP) با استفاده از الگو
         /// </summary>
-        Task SendOtpTemplateAsync(string templateCode, string phoneNumber, string otpCode);
+        Task<SmsSendResult> SendOtpTemplateAsync(string templateCode, string phoneNumber, string otpCode);
     }
 }

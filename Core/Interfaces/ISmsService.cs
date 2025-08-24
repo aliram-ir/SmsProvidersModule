@@ -1,4 +1,6 @@
-﻿namespace Core.Interfaces
+﻿using Core.Dtos;
+
+namespace Core.Interfaces
 {
     /// <summary>
     /// سرویس سطح بالای ارسال پیامک که از Provider انتخاب‌شده استفاده می‌کند
@@ -13,7 +15,7 @@
         /// <param name="phoneNumber"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        Task SendMessageAsync(string fromLine, string phoneNumber, string message);
+        Task<SmsSendResult> SendMessageAsync(string phoneNumber, string message);
 
         /// <summary>
         /// ارسال ساده کلی
@@ -22,7 +24,7 @@
         /// <param name="phoneNumbers"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        Task SendBulkMessageAsync(string fromLine, IEnumerable<string> phoneNumbers, string message);
+        Task SendBulkMessageAsync(IEnumerable<string> phoneNumbers, string message);
 
         // الگو
         /// <summary>
@@ -32,7 +34,7 @@
         /// <param name="phoneNumber"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        Task SendTemplateAsync(string templateCode, string phoneNumber, Dictionary<string, string> parameters);
+        Task SendTemplateAsync(string phoneNumber, Dictionary<string, string> parameters);
        
         /// <summary>
         /// ارسال کلی با الگو
@@ -41,7 +43,7 @@
         /// <param name="phoneNumbers"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        Task SendBulkTemplateAsync(string templateCode, IEnumerable<string> phoneNumbers, Dictionary<string, string> parameters);
+        Task SendBulkTemplateAsync(IEnumerable<string> phoneNumbers, Dictionary<string, string> parameters);
 
         // OTP
         /// <summary>
@@ -62,11 +64,12 @@
         // OTP الگو
         /// <summary>
         /// ارسال کد تایید
+        /// کد تایید در کلاینت ساخته و به این متد ارسال می‌شود
         /// </summary>
         /// <param name="templateCode"></param>
         /// <param name="phoneNumber"></param>
         /// <param name="otpCode"></param>
         /// <returns></returns>
-        Task SendOtpTemplateAsync(string templateCode, string phoneNumber, string otpCode);
+        Task<SmsSendResult> SendOtpTemplateAsync(string phoneNumber, string otpCode);
     }
 }

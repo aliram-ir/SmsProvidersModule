@@ -2,7 +2,7 @@
 {
     public enum SmsTemplateType
     {
-        None = 0,
+        Standard = 0,
 
         /// <summary>
         /// خوشامدگویی به کاربر جدید
