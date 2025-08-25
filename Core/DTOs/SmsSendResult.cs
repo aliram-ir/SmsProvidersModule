@@ -35,6 +35,10 @@
             return new SmsSendResult { Success = true, RecId = recId, ProviderStatus = providerStatus, RawResponse = rawResponse };
         }
 
+        public static SmsSendResult SuccessResult()
+    => SuccessResult(string.Empty, null, null);
+
+
         public static SmsSendResult FailureResult(string? errorMessage, string? providerStatus = null, string? rawResponse = null)
         {
             return new SmsSendResult { Success = false, ErrorMessage = errorMessage, ProviderStatus = providerStatus, RawResponse = rawResponse };

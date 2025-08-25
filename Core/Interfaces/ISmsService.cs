@@ -34,7 +34,7 @@ namespace Core.Interfaces
         /// <param name="phoneNumber"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        Task SendTemplateAsync(string phoneNumber, Dictionary<string, string> parameters);
+        Task SendTemplateAsync(string phoneNumber, string message);
        
         /// <summary>
         /// ارسال کلی با الگو
@@ -43,7 +43,7 @@ namespace Core.Interfaces
         /// <param name="phoneNumbers"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        Task SendBulkTemplateAsync(IEnumerable<string> phoneNumbers, Dictionary<string, string> parameters);
+        Task SendBulkTemplateAsync(IEnumerable<string> phoneNumbers, string message);
 
         // OTP
         /// <summary>

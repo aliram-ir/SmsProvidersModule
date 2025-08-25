@@ -10,22 +10,22 @@ namespace Core.Interfaces
         /// <summary>
         /// ارسال پیامک ساده به یک گیرنده با خط اختصاصی
         /// </summary>
-        Task<SmsSendResult> SendMessageAsync(string fromLine, string phoneNumber, string message);
+        Task<SmsSendResult> SendMessageAsync(string phoneNumber, string message);
 
         /// <summary>
         /// ارسال پیامک ساده به چند گیرنده با خط اختصاصی
         /// </summary>
-        Task SendBulkMessageAsync(string fromLine, IEnumerable<string> phoneNumbers, string message);
+        Task SendBulkMessageAsync(IEnumerable<string> phoneNumbers, string message);
 
         /// <summary>
         /// ارسال پیامک با استفاده از کد الگو (Template) به یک گیرنده
         /// </summary>
-        Task SendTemplateAsync(string templateCode, string phoneNumber, Dictionary<string, string> parameters);
+        Task SendTemplateAsync(string phoneNumber, string message);
 
         /// <summary>
         /// ارسال پیامک با استفاده از کد الگو (Template) به چند گیرنده
         /// </summary>
-        Task SendBulkTemplateAsync(string templateCode, IEnumerable<string> phoneNumbers, Dictionary<string, string> parameters);
+        Task SendBulkTemplateAsync(IEnumerable<string> phoneNumbers, string message);
 
         /// <summary>
         /// ارسال رمز یکبار مصرف (OTP) به یک گیرنده
@@ -36,6 +36,6 @@ namespace Core.Interfaces
         /// <summary>
         /// ارسال رمز یکبار مصرف (OTP) با استفاده از الگو
         /// </summary>
-        Task<SmsSendResult> SendOtpTemplateAsync(string templateCode, string phoneNumber, string otpCode);
+        Task<SmsSendResult> SendOtpTemplateAsync(string phoneNumber, string otpCode);
     }
 }

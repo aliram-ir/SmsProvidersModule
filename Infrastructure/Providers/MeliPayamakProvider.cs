@@ -1,6 +1,7 @@
 ﻿using Core.Dtos;
 using Core.DTOs;
 using Core.Entities;
+using Core.Enums;
 using Core.Interfaces;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -11,24 +12,31 @@ namespace Infrastructure.Providers
     {
         private readonly SmsProviderEntry _entry;
         private readonly Uri _baseAddress = new Uri("https://console.melipayamak.com");
+        private readonly List<SmsTemplate> _smsTemplates = [];
+        private readonly string _templateCode;
 
-        public MeliPayamakProvider(SmsProviderEntry entry)
+        public MeliPayamakProvider(SmsProviderEntry entry, string templateCode)
         {
             _entry = entry ?? throw new ArgumentNullException(nameof(entry));
+            _templateCode = templateCode;
+            _smsTemplates = GetTemplates();
         }
 
-        private string GetApiKey()
+        private string GetApiKey() => _entry.ApiKey ?? throw new InvalidOperationException("API Key not configured.");
+
+        private string GetDefaultLine()
         {
-            return _entry.ApiKey ?? throw new InvalidOperationException("API Key not configured for MeliPayamakProvider.");
+            var defaultLine = _entry.Lines
+                .FirstOrDefault(l =>
+                    l.IsActive &&
+                    l.IsDefault);
+            if (defaultLine is null) return string.Empty;
+           
+            return defaultLine.LineNumber ?? string.Empty;
         }
-
-        private string GetFromLineOrDefault(string? fromLine = null)
+        private List<SmsTemplate> GetTemplates()
         {
-            if (!string.IsNullOrWhiteSpace(fromLine))
-                return fromLine;
-
-            return _entry.Lines.FirstOrDefault()?.LineNumber
-                   ?? throw new InvalidOperationException("No sending line configured for MeliPayamakProvider.");
+            return _entry.Templates.ToList() ?? [];
         }
 
         private async Task<string> PostAsync(string relativeUrl, object payload)
@@ -40,13 +48,13 @@ namespace Infrastructure.Providers
         }
 
         // ارسال پیامک ساده به یک گیرنده
-        public async Task<SmsSendResult> SendMessageAsync(string fromLine, string phoneNumber, string message)
+        public async Task<SmsSendResult> SendMessageAsync(string phoneNumber, string message)
         {
             try
             {
                 var payload = new
                 {
-                    from = GetFromLineOrDefault(fromLine),
+                    from = GetDefaultLine(),
                     to = phoneNumber,
                     text = message
                 };
@@ -57,7 +65,7 @@ namespace Infrastructure.Providers
 
                 // اینجا response رو می‌تونی parse هم بکنی اگه فرمتش مشخصه
                 return SmsSendResult.SuccessResult(
-                    recId: null,                  // اگه provider کد رهگیری می‌ده اینجا بگذار
+                    recId: "0",                  // اگه provider کد رهگیری می‌ده اینجا بگذار
                     providerStatus: "Sent",
                     rawResponse: response
                 );
@@ -71,11 +79,11 @@ namespace Infrastructure.Providers
         }
 
         // ارسال پیامک ساده به چند گیرنده
-        public async Task SendBulkMessageAsync(string fromLine, IEnumerable<string> phoneNumbers, string message)
+        public async Task SendBulkMessageAsync(IEnumerable<string> phoneNumbers, string message)
         {
             var payload = new
             {
-                from = GetFromLineOrDefault(fromLine),
+                from = GetDefaultLine(),
                 to = string.Join(",", phoneNumbers),
                 text = message
             };
@@ -84,36 +92,26 @@ namespace Infrastructure.Providers
         }
 
         // ارسال پیامک با الگو (Template)
-        public async Task SendTemplateAsync(string templateCode, string phoneNumber, Dictionary<string, string> parameters)
+        public async Task SendTemplateAsync(string phoneNumber, string message)
         {
-            if (!int.TryParse(templateCode, out var bodyId))
-                throw new ArgumentException("TemplateCode must be numeric BodyId for MeliPayamak.", nameof(templateCode));
-
-            var args = parameters.Values.ToArray();
-
             var payload = new
             {
-                bodyId = bodyId,
+                bodyId = _templateCode,
                 to = phoneNumber,
-                args = args
+                message = message
             };
             var response = await PostAsync($"api/send/shared/{GetApiKey()}", payload);
             Console.WriteLine($"[MeliPayamak Template] Response: {response}");
         }
 
         // ارسال گروهی با الگو
-        public async Task SendBulkTemplateAsync(string templateCode, IEnumerable<string> phoneNumbers, Dictionary<string, string> parameters)
+        public async Task SendBulkTemplateAsync(IEnumerable<string> phoneNumbers, string message)
         {
-            if (!int.TryParse(templateCode, out var bodyId))
-                throw new ArgumentException("TemplateCode must be numeric BodyId for MeliPayamak.", nameof(templateCode));
-
-            var args = parameters.Values.ToArray();
-
             var payload = new
             {
-                bodyId = bodyId,
+                bodyId = _templateCode,
                 to = string.Join(",", phoneNumbers),
-                args = args
+                message = message
             };
             var response = await PostAsync($"api/send/shared/{GetApiKey()}", payload);
             Console.WriteLine($"[MeliPayamak Bulk Template] Response: {response}");
@@ -137,16 +135,17 @@ namespace Infrastructure.Providers
         }
 
         // ارسال OTP با استفاده از الگو
-        public async Task<SmsSendResult> SendOtpTemplateAsync(string templateCode, string phoneNumber, string otpCode)
+        public async Task<SmsSendResult> SendOtpTemplateAsync(string phoneNumber, string otpCode)
         {
             try
             {
-                if (!int.TryParse(templateCode, out var bodyId))
-                    return SmsSendResult.FailureResult("TemplateCode must be numeric");
+                var body = _smsTemplates
+                    .SingleOrDefault(x => x.TemplateType == SmsTemplateType.OTP)
+                    ?.TemplateCode;
 
                 var payload = new
                 {
-                    bodyId = bodyId,
+                    bodyId = body,
                     to = phoneNumber,
                     args = new[] { otpCode }
                 };
